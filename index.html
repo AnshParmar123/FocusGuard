@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phone Detector</title>
+    <meta
+      name="description"
+      content="A clean browser-based phone detector with live camera scanning and alert audio."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=DM+Serif+Display:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js" defer></script>
+    <script src="./webapp.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
+
+    <main class="app-shell">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">Focus Mode</p>
+          <h1>Phone Detector</h1>
+          <p class="tagline">
+            Open the camera, scan the room, and trigger a loud alert the moment a phone appears.
+          </p>
+
+          <div class="action-row">
+            <button id="startButton" class="primary-button">Start Camera</button>
+            <button id="stopButton" class="secondary-button" disabled>Stop</button>
+          </div>
+
+          <div class="status-strip">
+            <div class="metric">
+              <span class="metric-label">Status</span>
+              <strong id="statusText">Idle</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Detections</span>
+              <strong id="phoneCount">0</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Alarm</span>
+              <strong id="alarmState">Ready</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="viewer-card">
+          <div class="viewer-topbar">
+            <span class="live-dot"></span>
+            <span id="viewerLabel">Camera offline</span>
+          </div>
+
+          <div class="viewer-stage">
+            <video id="camera" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div id="emptyState" class="empty-state">
+              <p>Press Start Camera to begin live phone detection.</p>
+            </div>
+            <div id="alertBanner" class="alert-banner">Phone detected</div>
+          </div>
+        </div>
+      </section>
+
+      <p class="signature">Made with ❤️ by Ansh Parmar</p>
+    </main>
+
+    <audio id="alarmAudio" src="./audio.mp3" preload="auto"></audio>
+  </body>
+</html>
