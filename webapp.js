@@ -10,6 +10,7 @@ const elements = {
   viewerLabel: document.getElementById("viewerLabel"),
   alertBanner: document.getElementById("alertBanner"),
   alarmAudio: document.getElementById("alarmAudio"),
+  safetyBadge: document.getElementById("safetyBadge"),
 };
 
 const state = {
@@ -25,15 +26,16 @@ const state = {
   phoneSeenStreak: 0,
   phoneMissingStreak: 0,
   lastPhonePredictions: [],
+  threatActive: false,
 };
 
-const PHONE_CLASS = "cell phone";
-const MIN_SCORE = 0.3;
-const DETECTION_INTERVAL_MS = 220;
-const ALERT_COOLDOWN_MS = 6000;
-const SIREN_DURATION_MS = 900;
-const DETECTION_CONFIRM_FRAMES = 2;
-const DETECTION_GRACE_FRAMES = 3;
+const PHONE_LIKE_CLASSES = new Set(["cell phone", "remote"]);
+const MIN_SCORE = 0.22;
+const DETECTION_INTERVAL_MS = 180;
+const ALERT_COOLDOWN_MS = 3000;
+const SIREN_DURATION_MS = 180;
+const DETECTION_CONFIRM_FRAMES = 1;
+const DETECTION_GRACE_FRAMES = 4;
 let lastDetectionTime = 0;
 
 elements.startButton.addEventListener("click", startDetection);
@@ -61,6 +63,9 @@ async function startDetection() {
       audio: false,
       video: {
         facingMode: { ideal: "environment" },
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+        frameRate: { ideal: 24, max: 30 },
       },
     });
 
@@ -115,7 +120,8 @@ function stopDetection() {
   state.phoneSeenStreak = 0;
   state.phoneMissingStreak = 0;
   state.lastPhonePredictions = [];
-  setStatus("Idle");
+  state.threatActive = false;
+  setStatus("SAFE", false);
 }
 
 async function tick(now = 0) {
@@ -139,13 +145,16 @@ async function tick(now = 0) {
   try {
     syncCanvasSize();
     const predictions = await state.model.detect(elements.video, 20, MIN_SCORE);
-    const directPhones = predictions.filter(
-      (prediction) => prediction.class === PHONE_CLASS && prediction.score >= MIN_SCORE,
-    );
+    const directPhones = predictions
+      .filter(
+        (prediction) =>
+          PHONE_LIKE_CLASSES.has(prediction.class) && prediction.score >= MIN_SCORE,
+      )
+      .sort((first, second) => second.score - first.score)
+      .slice(0, 3);
     const stablePhones = stabilizeDetections(directPhones);
 
     renderDetections(stablePhones);
-    maybePlayAlarm(stablePhones.length > 0);
   } catch (error) {
     console.error("Detection error:", error);
     setStatus("Detection paused");
@@ -188,25 +197,34 @@ function renderDetections(phones) {
   elements.phoneCount.textContent = String(phones.length);
 
   if (!phones.length) {
+    if (state.threatActive) {
+      resetAlertPlayback();
+    }
+    state.threatActive = false;
     setIdleAlertUi();
     if (state.isRunning) {
-      setStatus("Scanning");
+      setStatus("SAFE", false);
       elements.viewerLabel.textContent = "Live detection running";
     }
     return;
   }
 
+  const shouldTriggerAlert = !state.threatActive;
+  state.threatActive = true;
   document.body.classList.add("alert-mode");
   elements.alertBanner.classList.add("visible");
-  setStatus("Phone detected");
-  elements.viewerLabel.textContent = phones.length === 1 ? "1 phone in frame" : `${phones.length} phones in frame`;
+  setStatus("PHONE DETECTED", true);
+  elements.viewerLabel.textContent = phones.length === 1 ? "Phone-like device in frame" : `${phones.length} phone-like devices in frame`;
+  if (shouldTriggerAlert) {
+    maybePlayAlarm(true);
+  }
 
   context.lineWidth = 3;
   context.font = '700 18px "Manrope", sans-serif';
 
   phones.forEach((phone) => {
     const [x, y, width, height] = phone.bbox;
-    const label = `Phone ${Math.round(phone.score * 100)}%`;
+    const label = `${phone.class === "remote" ? "Possible phone" : "Phone"} ${Math.round(phone.score * 100)}%`;
 
     context.strokeStyle = "#ff5f6d";
     context.fillStyle = "rgba(255, 95, 109, 0.18)";
@@ -352,8 +370,23 @@ function clearOverlay() {
   context.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
 }
 
-function setStatus(text) {
+function setStatus(text, isDanger = false) {
   elements.statusText.textContent = text;
+  elements.statusText.className = isDanger ? "status-danger" : "status-safe";
+  if (elements.safetyBadge) {
+    elements.safetyBadge.textContent = isDanger ? "PHONE DETECTED" : "SAFE";
+    elements.safetyBadge.className = `safety-badge ${isDanger ? "safety-danger" : "safety-safe"}`;
+  }
+}
+
+function resetAlertPlayback() {
+  elements.alarmAudio.pause();
+  elements.alarmAudio.currentTime = 0;
+  stopSiren();
+  state.lastAlertAt = 0;
+  if (state.alarmReady) {
+    elements.alarmState.textContent = "Armed";
+  }
 }
 
 function setIdleAlertUi() {

@@ -192,12 +192,49 @@ button:disabled {
 }
 
 .viewer-topbar {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 6px 2px 16px;
   color: var(--muted);
   font-weight: 700;
+  flex-wrap: wrap;
+}
+
+.viewer-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.safety-badge {
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.safety-safe {
+  color: #dcffef;
+  background: rgba(48, 198, 122, 0.18);
+  border: 1px solid rgba(48, 198, 122, 0.28);
+}
+
+.safety-danger {
+  color: #ffe5e8;
+  background: rgba(255, 90, 110, 0.18);
+  border: 1px solid rgba(255, 90, 110, 0.3);
+  box-shadow: 0 0 24px rgba(255, 90, 110, 0.22);
+}
+
+.status-safe {
+  color: #dcffef;
+}
+
+.status-danger {
+  color: #ffe5e8;
 }
 
 .live-dot {
@@ -237,6 +274,7 @@ button:disabled {
 
 #camera {
   object-fit: cover;
+  object-position: center;
 }
 
 .empty-state {
