@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Phone Detector</title>
+    <title>FocusGuard</title>
     <meta
       name="description"
-      content="A clean browser-based phone detector with live camera scanning and alert audio."
+      content="Premium AI phone detection dashboard with live monitoring and instant alerts."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=DM+Serif+Display:ital@0;1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
@@ -20,60 +20,108 @@
     <script src="./webapp.js" defer></script>
   </head>
   <body>
-    <div class="ambient ambient-left"></div>
-    <div class="ambient ambient-right"></div>
+    <div class="background-orb orb-a"></div>
+    <div class="background-orb orb-b"></div>
+    <div class="background-grid"></div>
 
     <main class="app-shell">
-      <section class="hero-card">
-        <div class="hero-copy">
-          <p class="eyebrow">Focus Mode</p>
-          <h1>Phone Detector</h1>
-          <p class="tagline">
-            Open the camera, scan the room, and trigger a loud alert the moment a phone appears.
-          </p>
-
-          <div class="action-row">
-            <button id="startButton" class="primary-button">Start Camera</button>
-            <button id="stopButton" class="secondary-button" disabled>Stop</button>
-          </div>
-
-          <div class="status-strip">
-            <div class="metric">
-              <span class="metric-label">Status</span>
-              <strong id="statusText">Idle</strong>
-            </div>
-            <div class="metric">
-              <span class="metric-label">Detections</span>
-              <strong id="phoneCount">0</strong>
-            </div>
-            <div class="metric">
-              <span class="metric-label">Alarm</span>
-              <strong id="alarmState">Ready</strong>
-            </div>
+      <nav class="top-nav glass-panel">
+        <div class="brand-block">
+          <div class="brand-mark">FG</div>
+          <div>
+            <p class="eyebrow">Premium AI Monitoring</p>
+            <h1>FocusGuard</h1>
           </div>
         </div>
 
-        <div class="viewer-card">
-          <div class="viewer-topbar">
-            <div class="viewer-status-row">
-              <span class="live-dot"></span>
-              <span id="viewerLabel">Camera offline</span>
+        <div class="nav-status">
+          <span class="nav-label">System status</span>
+          <span id="safetyBadge" class="safety-badge safety-safe">SAFE</span>
+        </div>
+      </nav>
+
+      <section class="dashboard-grid">
+        <section class="camera-column glass-panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-label">Live Surveillance</p>
+              <h2>Protected Camera Feed</h2>
             </div>
-            <span id="safetyBadge" class="safety-badge safety-safe">SAFE</span>
+            <span id="viewerLabel" class="viewer-pill">Camera offline</span>
           </div>
 
           <div class="viewer-stage">
             <video id="camera" autoplay muted playsinline></video>
             <canvas id="overlay"></canvas>
-            <div id="emptyState" class="empty-state">
-              <p>Press Start Camera to begin live phone detection.</p>
-            </div>
-            <div id="alertBanner" class="alert-banner">Phone detected</div>
-          </div>
-        </div>
-      </section>
+            <div class="scan-sheen"></div>
 
-      <p class="signature">Made with ❤️ by Ansh Parmar</p>
+            <div id="emptyState" class="empty-state">
+              <div class="empty-card">
+                <span class="empty-badge">Standby Mode</span>
+                <h3>Ready to monitor your no-phone zone</h3>
+                <p>
+                  Start the camera to arm the AI detector and switch this dashboard
+                  into live monitoring mode.
+                </p>
+              </div>
+            </div>
+
+            <div id="alertBanner" class="alert-banner">Phone detected. Alert system active.</div>
+          </div>
+
+          <div class="feed-metrics">
+            <article class="metric-card">
+              <span class="metric-label">Tracked objects</span>
+              <strong id="phoneCount">0</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Top confidence</span>
+              <strong id="confidenceValue">0%</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Alert state</span>
+              <strong id="alarmState">Ready</strong>
+            </article>
+          </div>
+        </section>
+
+        <aside class="side-column">
+          <section class="glass-panel side-card status-card">
+            <p class="section-label">Detection Status</p>
+            <strong id="statusText" class="status-value status-safe">SAFE</strong>
+            <p id="statusMeta" class="side-copy">Protected zone is clear and the detector is idle.</p>
+          </section>
+
+          <section class="glass-panel side-card control-card">
+            <p class="section-label">Controls</p>
+            <div class="action-row">
+              <button id="startButton" class="primary-button">Start Camera</button>
+              <button id="stopButton" class="secondary-button" disabled>Stop</button>
+            </div>
+            <p class="side-copy">Arm the system to begin real-time phone monitoring with instant alerts.</p>
+          </section>
+
+          <section class="glass-panel side-card telemetry-card">
+            <p class="section-label">Alert Telemetry</p>
+            <div class="telemetry-row">
+              <span>Feed state</span>
+              <strong id="feedStateValue">Offline</strong>
+            </div>
+            <div class="telemetry-row">
+              <span>Response mode</span>
+              <strong>Strict</strong>
+            </div>
+            <div class="telemetry-row">
+              <span>Detection class</span>
+              <strong>Phone / device</strong>
+            </div>
+          </section>
+
+          <section class="glass-panel side-card footer-card">
+            <p class="footer-note">Made with ❤️ by Ansh Parmar</p>
+          </section>
+        </aside>
+      </section>
     </main>
 
     <audio id="alarmAudio" src="./audio.mp3" preload="auto"></audio>

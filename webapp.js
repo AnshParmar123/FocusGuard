@@ -11,6 +11,9 @@ const elements = {
   alertBanner: document.getElementById("alertBanner"),
   alarmAudio: document.getElementById("alarmAudio"),
   safetyBadge: document.getElementById("safetyBadge"),
+  confidenceValue: document.getElementById("confidenceValue"),
+  statusMeta: document.getElementById("statusMeta"),
+  feedStateValue: document.getElementById("feedStateValue"),
 };
 
 const state = {
@@ -79,6 +82,7 @@ async function startDetection() {
     elements.canvas.style.display = "block";
     elements.emptyState.style.display = "none";
     elements.viewerLabel.textContent = "Live detection running";
+    elements.feedStateValue.textContent = "Online";
     setStatus("Scanning");
     tick();
   } catch (error) {
@@ -114,7 +118,11 @@ function stopDetection() {
   elements.canvas.style.display = "none";
   elements.emptyState.style.display = "grid";
   elements.viewerLabel.textContent = "Camera offline";
+  elements.feedStateValue.textContent = "Offline";
   elements.phoneCount.textContent = "0";
+  if (elements.confidenceValue) {
+    elements.confidenceValue.textContent = "0%";
+  }
   elements.startButton.disabled = false;
   elements.stopButton.disabled = true;
   state.phoneSeenStreak = 0;
@@ -197,6 +205,9 @@ function renderDetections(phones) {
   elements.phoneCount.textContent = String(phones.length);
 
   if (!phones.length) {
+    if (elements.confidenceValue) {
+      elements.confidenceValue.textContent = "0%";
+    }
     if (state.threatActive) {
       resetAlertPlayback();
     }
@@ -211,6 +222,10 @@ function renderDetections(phones) {
 
   const shouldTriggerAlert = !state.threatActive;
   state.threatActive = true;
+  if (elements.confidenceValue) {
+    const topScore = Math.max(...phones.map((phone) => phone.score));
+    elements.confidenceValue.textContent = `${Math.round(topScore * 100)}%`;
+  }
   document.body.classList.add("alert-mode");
   elements.alertBanner.classList.add("visible");
   setStatus("PHONE DETECTED", true);
@@ -372,7 +387,16 @@ function clearOverlay() {
 
 function setStatus(text, isDanger = false) {
   elements.statusText.textContent = text;
-  elements.statusText.className = isDanger ? "status-danger" : "status-safe";
+  elements.statusText.className = `status-value ${isDanger ? "status-danger" : "status-safe"}`;
+  if (elements.statusMeta) {
+    elements.statusMeta.textContent = isDanger
+      ? "Risk object confirmed. Alerting sequence is active."
+      : text === "Loading model"
+        ? "Preparing the AI detector and camera feed."
+        : text === "Scanning"
+          ? "Protected zone is live and actively being monitored."
+          : "Protected zone is clear and the detector is idle.";
+  }
   if (elements.safetyBadge) {
     elements.safetyBadge.textContent = isDanger ? "PHONE DETECTED" : "SAFE";
     elements.safetyBadge.className = `safety-badge ${isDanger ? "safety-danger" : "safety-safe"}`;
