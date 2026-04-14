@@ -22,13 +22,18 @@ const state = {
   alarmReady: false,
   sirenContext: null,
   sirenTimeoutId: null,
+  phoneSeenStreak: 0,
+  phoneMissingStreak: 0,
+  lastPhonePredictions: [],
 };
 
 const PHONE_CLASS = "cell phone";
-const MIN_SCORE = 0.55;
+const MIN_SCORE = 0.3;
 const DETECTION_INTERVAL_MS = 220;
 const ALERT_COOLDOWN_MS = 6000;
 const SIREN_DURATION_MS = 900;
+const DETECTION_CONFIRM_FRAMES = 2;
+const DETECTION_GRACE_FRAMES = 3;
 let lastDetectionTime = 0;
 
 elements.startButton.addEventListener("click", startDetection);
@@ -107,6 +112,9 @@ function stopDetection() {
   elements.phoneCount.textContent = "0";
   elements.startButton.disabled = false;
   elements.stopButton.disabled = true;
+  state.phoneSeenStreak = 0;
+  state.phoneMissingStreak = 0;
+  state.lastPhonePredictions = [];
   setStatus("Idle");
 }
 
@@ -130,19 +138,48 @@ async function tick(now = 0) {
 
   try {
     syncCanvasSize();
-    const predictions = await state.model.detect(elements.video);
-    const phones = predictions.filter(
+    const predictions = await state.model.detect(elements.video, 20, MIN_SCORE);
+    const directPhones = predictions.filter(
       (prediction) => prediction.class === PHONE_CLASS && prediction.score >= MIN_SCORE,
     );
+    const stablePhones = stabilizeDetections(directPhones);
 
-    renderDetections(phones);
-    maybePlayAlarm(phones.length > 0);
+    renderDetections(stablePhones);
+    maybePlayAlarm(stablePhones.length > 0);
   } catch (error) {
     console.error("Detection error:", error);
     setStatus("Detection paused");
   } finally {
     state.isDetecting = false;
   }
+}
+
+function stabilizeDetections(directPhones) {
+  if (directPhones.length > 0) {
+    state.phoneSeenStreak += 1;
+    state.phoneMissingStreak = 0;
+    state.lastPhonePredictions = directPhones;
+  } else if (state.lastPhonePredictions.length > 0) {
+    state.phoneMissingStreak += 1;
+  }
+
+  if (state.phoneSeenStreak >= DETECTION_CONFIRM_FRAMES && state.lastPhonePredictions.length > 0) {
+    if (directPhones.length > 0) {
+      return directPhones;
+    }
+
+    if (state.phoneMissingStreak <= DETECTION_GRACE_FRAMES) {
+      return state.lastPhonePredictions;
+    }
+  }
+
+  if (state.phoneMissingStreak > DETECTION_GRACE_FRAMES) {
+    state.phoneSeenStreak = 0;
+    state.phoneMissingStreak = 0;
+    state.lastPhonePredictions = [];
+  }
+
+  return [];
 }
 
 function renderDetections(phones) {
