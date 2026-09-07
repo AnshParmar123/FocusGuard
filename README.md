@@ -1,30 +1,38 @@
 # FocusGuard
 
-FocusGuard is a browser-based phone detection app built for focus sessions, classrooms, libraries, study rooms, and any other no-phone environment.
+FocusGuard is a browser-based AI monitoring app built for focus sessions, classrooms, libraries, study rooms, desks, and any other zone you want watched.
 
-It opens your webcam, detects phones in real time using AI in the browser, and triggers a siren followed by a custom alert audio whenever a phone is found in the frame.
+It opens your webcam, watches for a condition you choose in real time using AI in the browser, and triggers a siren followed by a custom alert audio whenever that condition is met.
 
 ## Highlights
 
 - Clean premium UI built with plain HTML, CSS, and JavaScript
-- Real-time phone detection in the browser using TensorFlow.js and COCO-SSD
+- Real-time object detection in the browser using TensorFlow.js and COCO-SSD
+- Four selectable **guard profiles** so the same app covers multiple use cases:
+  - **Phone-Free Zone** — alerts when a phone appears in frame
+  - **Presence Guard** — alerts when you leave the frame (front camera recommended)
+  - **Intruder Alert** — alerts when a second person enters the frame
+  - **Custom Object** — type any object the AI model recognizes and watch for it
+- Settings drawer with live sensitivity, alert-cooldown, alert-sound (siren+audio / siren only / silent), and front/back camera controls — all persisted to `localStorage`
+- Session stats: session time, alerts triggered, and longest clean streak
 - Live bounding boxes drawn over the camera feed
-- Alert flow with a siren sound followed by `audio.mp3`
-- Automatic alarm restart on later detections
+- Alert flow with a siren sound, optional `audio.mp3` follow-up, and mobile vibration on supported devices
+- Mobile-friendly layout: bottom-sheet settings drawer, safe-area padding for notches, touch-sized controls, and an adaptive camera viewport
 - Static-site friendly setup that works well with Vercel
 
 ## How It Works
 
 The app runs fully on the client side.
 
-1. The user opens the website and clicks `Start Camera`.
+1. The user opens the website, optionally picks a guard profile and settings in the gear-icon drawer, then clicks `Start Camera`.
 2. The browser asks for camera permission.
 3. The app loads the COCO-SSD model through TensorFlow.js.
-4. The live camera feed is scanned continuously for the `cell phone` object class.
-5. When a phone is detected:
-   - a bounding box is drawn on screen
+4. The live camera feed is scanned continuously for whatever the active guard profile is watching for.
+5. When the profile's alert condition is met:
+   - a bounding box is drawn on screen (where applicable)
    - a short siren sound plays first
-   - the main alert audio from `audio.mp3` plays immediately after
+   - the main alert audio from `audio.mp3` plays immediately after (unless a different alert-sound mode is selected)
+   - the device vibrates briefly, if supported
 6. If a later detection happens after the cooldown window, the alert sequence starts again from the beginning.
 
 ## Tech Stack
@@ -116,10 +124,10 @@ No backend or build step is required.
 
 ## Current Detection Behavior
 
-- The app looks specifically for the `cell phone` class from the COCO-SSD model.
-- Detection happens repeatedly on the live video feed.
-- The alert sequence is rate-limited with a cooldown so it does not spam continuously every frame.
-- If a fresh detection happens after the cooldown, the siren and main audio restart from the beginning.
+- The active guard profile determines what the COCO-SSD model looks for (`cell phone`/`remote` for Phone-Free Zone, `person` for Presence Guard and Intruder Alert, or any class name typed into Custom Object).
+- Detection happens repeatedly on the live video feed, smoothed over a few frames in both directions so brief flickers don't cause false alarms or premature "all clear" states.
+- The alert sequence is rate-limited with a configurable cooldown (default 3s) so it does not spam continuously every frame.
+- If a fresh alert condition is met after the cooldown, the siren and main audio restart from the beginning.
 
 ## Limitations
 

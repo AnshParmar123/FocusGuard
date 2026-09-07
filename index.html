@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>FocusGuard</title>
     <meta
       name="description"
-      content="Premium AI phone detection dashboard with live monitoring and instant alerts."
+      content="Premium AI monitoring dashboard: watch for phones, presence, intruders, or any custom object in real time with instant alerts."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,6 +35,10 @@
         </div>
 
         <div class="nav-status">
+          <button id="settingsButton" class="icon-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="settingsDrawer">
+            <span class="icon-glyph" aria-hidden="true">&#9881;</span>
+            <span>Settings</span>
+          </button>
           <span class="nav-label">System status</span>
           <span id="safetyBadge" class="safety-badge safety-safe">SAFE</span>
         </div>
@@ -45,7 +49,7 @@
           <div class="panel-header">
             <div>
               <p class="section-label">Live Surveillance</p>
-              <h2>Protected Camera Feed</h2>
+              <h2 id="panelTitle">Protected Camera Feed</h2>
             </div>
             <span id="viewerLabel" class="viewer-pill">Camera offline</span>
           </div>
@@ -58,8 +62,8 @@
             <div id="emptyState" class="empty-state">
               <div class="empty-card">
                 <span class="empty-badge">Standby Mode</span>
-                <h3>Ready to monitor your no-phone zone</h3>
-                <p>
+                <h3>Ready to monitor your zone</h3>
+                <p id="emptyStateCopy">
                   Start the camera to arm the AI detector and switch this dashboard
                   into live monitoring mode.
                 </p>
@@ -98,7 +102,7 @@
               <button id="startButton" class="primary-button">Start Camera</button>
               <button id="stopButton" class="secondary-button" disabled>Stop</button>
             </div>
-            <p class="side-copy">Arm the system to begin real-time phone monitoring with instant alerts.</p>
+            <p class="side-copy">Arm the system to begin real-time monitoring with instant alerts.</p>
           </section>
 
           <section class="glass-panel side-card telemetry-card">
@@ -108,21 +112,164 @@
               <strong id="feedStateValue">Offline</strong>
             </div>
             <div class="telemetry-row">
-              <span>Response mode</span>
-              <strong>Strict</strong>
+              <span>Guard profile</span>
+              <strong id="profileValue">Phone-Free Zone</strong>
             </div>
             <div class="telemetry-row">
-              <span>Detection class</span>
-              <strong>Phone / device</strong>
+              <span>Alert sound</span>
+              <strong id="soundModeValue">Siren + Audio</strong>
+            </div>
+          </section>
+
+          <section class="glass-panel side-card stats-card">
+            <p class="section-label">Session Stats</p>
+            <div class="telemetry-row">
+              <span>Session time</span>
+              <strong id="sessionTimeValue">00:00</strong>
+            </div>
+            <div class="telemetry-row">
+              <span>Alerts triggered</span>
+              <strong id="alertCountValue">0</strong>
+            </div>
+            <div class="telemetry-row">
+              <span>Longest clean streak</span>
+              <strong id="longestStreakValue">00:00</strong>
             </div>
           </section>
 
           <section class="glass-panel side-card footer-card">
-            <p class="footer-note">Made with ❤️ by Ansh Parmar</p>
+            <p class="footer-note">Made with &hearts; by Ansh Parmar</p>
           </section>
         </aside>
       </section>
     </main>
+
+    <div id="settingsOverlay" class="settings-overlay"></div>
+    <aside id="settingsDrawer" class="settings-drawer glass-panel" aria-hidden="true">
+      <div class="drawer-header">
+        <h3>Guard Settings</h3>
+        <button id="closeSettingsButton" class="icon-button" type="button" aria-label="Close settings">
+          <span class="icon-glyph" aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="drawer-section">
+          <p class="section-label">Guard profile</p>
+          <div class="profile-grid" id="profileGrid">
+            <button type="button" class="profile-option active" data-profile="phone">
+              <span class="profile-icon" aria-hidden="true">&#128245;</span>
+              <span class="profile-name">Phone-Free Zone</span>
+              <span class="profile-desc">Alerts when a phone appears in frame.</span>
+            </button>
+            <button type="button" class="profile-option" data-profile="presence">
+              <span class="profile-icon" aria-hidden="true">&#128694;</span>
+              <span class="profile-name">Presence Guard</span>
+              <span class="profile-desc">Alerts when you leave the frame. Front camera works best.</span>
+            </button>
+            <button type="button" class="profile-option" data-profile="intruder">
+              <span class="profile-icon" aria-hidden="true">&#128064;</span>
+              <span class="profile-name">Intruder Alert</span>
+              <span class="profile-desc">Alerts when a second person enters frame.</span>
+            </button>
+            <button type="button" class="profile-option" data-profile="custom">
+              <span class="profile-icon" aria-hidden="true">&#127919;</span>
+              <span class="profile-name">Custom Object</span>
+              <span class="profile-desc">Watch for any object you choose.</span>
+            </button>
+          </div>
+
+          <div id="customObjectRow" class="custom-object-row" hidden>
+            <label for="customObjectInput">Object to watch for</label>
+            <input
+              id="customObjectInput"
+              type="text"
+              list="cocoClasses"
+              placeholder="e.g. cup, book, laptop"
+              autocomplete="off"
+            />
+            <datalist id="cocoClasses">
+              <option value="person"></option>
+              <option value="bicycle"></option>
+              <option value="car"></option>
+              <option value="motorcycle"></option>
+              <option value="backpack"></option>
+              <option value="umbrella"></option>
+              <option value="handbag"></option>
+              <option value="suitcase"></option>
+              <option value="bottle"></option>
+              <option value="wine glass"></option>
+              <option value="cup"></option>
+              <option value="fork"></option>
+              <option value="knife"></option>
+              <option value="spoon"></option>
+              <option value="bowl"></option>
+              <option value="banana"></option>
+              <option value="apple"></option>
+              <option value="sandwich"></option>
+              <option value="chair"></option>
+              <option value="couch"></option>
+              <option value="potted plant"></option>
+              <option value="bed"></option>
+              <option value="dining table"></option>
+              <option value="tv"></option>
+              <option value="laptop"></option>
+              <option value="mouse"></option>
+              <option value="remote"></option>
+              <option value="keyboard"></option>
+              <option value="cell phone"></option>
+              <option value="microwave"></option>
+              <option value="book"></option>
+              <option value="clock"></option>
+              <option value="vase"></option>
+              <option value="scissors"></option>
+              <option value="teddy bear"></option>
+            </datalist>
+            <p class="field-hint">Only recognizes the AI model's built-in object list. Try a suggestion above.</p>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <p class="section-label">Detection sensitivity</p>
+          <input id="sensitivitySlider" type="range" min="0.15" max="0.6" step="0.01" value="0.22" />
+          <div class="slider-labels">
+            <span>Loose</span>
+            <span id="sensitivityValue">Balanced</span>
+            <span>Strict</span>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <p class="section-label">Alert cooldown</p>
+          <input id="cooldownSlider" type="range" min="1" max="10" step="1" value="3" />
+          <div class="slider-labels">
+            <span>1s</span>
+            <span id="cooldownLabelValue">3s</span>
+            <span>10s</span>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <p class="section-label">Alert sound</p>
+          <div class="segmented" id="soundModeGroup">
+            <button type="button" class="segmented-option active" data-sound="full">Siren + Audio</button>
+            <button type="button" class="segmented-option" data-sound="siren">Siren Only</button>
+            <button type="button" class="segmented-option" data-sound="silent">Silent</button>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <p class="section-label">Camera</p>
+          <div class="segmented" id="cameraFacingGroup">
+            <button type="button" class="segmented-option active" data-facing="environment">Back</button>
+            <button type="button" class="segmented-option" data-facing="user">Front</button>
+          </div>
+          <p class="field-hint">Switching camera restarts the feed if it is running.</p>
+        </div>
+
+        <button id="resetSettingsButton" class="secondary-button reset-button" type="button">Reset to defaults</button>
+      </div>
+    </aside>
 
     <audio id="alarmAudio" src="./audio.mp3" preload="auto"></audio>
   </body>
