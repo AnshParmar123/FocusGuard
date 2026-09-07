@@ -4,82 +4,103 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>FocusGuard</title>
-    <meta
-      name="description"
-      content="Premium AI monitoring dashboard: watch for phones, presence, intruders, or any custom object in real time with instant alerts."
-    />
+    <meta name="description" content="AI-powered monitoring dashboard: detect phones, presence, intruders, or custom objects in real time with instant alerts." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js" defer></script>
     <script src="./webapp.js" defer></script>
   </head>
   <body>
-    <div class="background-orb orb-a"></div>
-    <div class="background-orb orb-b"></div>
-    <div class="background-grid"></div>
+    <div class="bg-glow" aria-hidden="true"></div>
 
     <main class="app-shell">
-      <nav class="top-nav glass-panel">
+      <nav class="top-nav">
         <div class="brand-block">
-          <div class="brand-mark">FG</div>
-          <div>
-            <p class="eyebrow">Premium AI Monitoring</p>
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2.5L3.5 7v5c0 4.4 3.56 8.48 8.5 9.5 4.94-1.02 8.5-5.1 8.5-9.5V7L12 2.5z"
+                    stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="2" fill="currentColor"/>
+              <path d="M12 8.5v.9M12 14.6v.9M15.5 12h-.9M9.4 12h-.9"
+                    stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="brand-info">
             <h1>FocusGuard</h1>
+            <p class="brand-sub">AI monitoring</p>
           </div>
         </div>
 
-        <div class="nav-status">
-          <button id="settingsButton" class="icon-button" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="settingsDrawer">
-            <span class="icon-glyph" aria-hidden="true">&#9881;</span>
+        <div class="nav-right">
+          <button id="settingsButton" class="icon-button" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="settingsDrawer">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <circle cx="7" cy="7" r="2.2" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M7 1.5v1M7 11.5v1M1.5 7h1M11.5 7h1M3.4 3.4l.7.7M9.9 9.9l.7.7M3.4 10.6l.7-.7M9.9 4.1l.7-.7"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
             <span>Settings</span>
           </button>
-          <span class="nav-label">System status</span>
-          <span id="safetyBadge" class="safety-badge safety-safe">SAFE</span>
+          <div class="live-clock" aria-live="off" aria-label="Current time in India Standard Time">
+            <span id="clockDisplay">00:00</span>
+            <span id="clockAmPm" class="clock-ampm"></span>
+            <span class="clock-timezone">IST</span>
+          </div>
+          <div class="status-cluster">
+            <span class="status-dot-wrap" aria-hidden="true"><span class="status-dot"></span></span>
+            <span id="safetyBadge" class="safety-badge safety-safe">Safe</span>
+          </div>
         </div>
       </nav>
 
-      <section class="dashboard-grid">
-        <section class="camera-column glass-panel">
+      <div class="dashboard-grid">
+        <!-- ── Camera feed ── -->
+        <section class="camera-column">
           <div class="panel-header">
-            <div>
-              <p class="section-label">Live Surveillance</p>
-              <h2 id="panelTitle">Protected Camera Feed</h2>
-            </div>
-            <span id="viewerLabel" class="viewer-pill">Camera offline</span>
+            <h2 id="panelTitle">Camera feed</h2>
+            <span id="viewerLabel" class="viewer-pill">Offline</span>
           </div>
 
           <div class="viewer-stage">
             <video id="camera" autoplay muted playsinline></video>
             <canvas id="overlay"></canvas>
-            <div class="scan-sheen"></div>
+            <div class="scan-sheen" aria-hidden="true"></div>
+            <div class="scan-line" aria-hidden="true"></div>
+
+            <span class="hud-corner hud-tl" aria-hidden="true"></span>
+            <span class="hud-corner hud-tr" aria-hidden="true"></span>
+            <span class="hud-corner hud-bl" aria-hidden="true"></span>
+            <span class="hud-corner hud-br" aria-hidden="true"></span>
 
             <div id="emptyState" class="empty-state">
+              <div class="standby-reticle" aria-hidden="true">
+                <div class="reticle-ring r-outer"></div>
+                <div class="reticle-ring r-inner"></div>
+                <div class="reticle-h"></div>
+                <div class="reticle-v"></div>
+                <div class="reticle-dot"></div>
+              </div>
               <div class="empty-card">
-                <span class="empty-badge">Standby Mode</span>
-                <h3>Ready to monitor your zone</h3>
-                <p id="emptyStateCopy">
-                  Start the camera to arm the AI detector and switch this dashboard
-                  into live monitoring mode.
-                </p>
+                <span class="standby-label">Standby</span>
+                <h3>Ready to monitor</h3>
+                <p id="emptyStateCopy">Start the camera to arm the AI detector and switch this dashboard into live monitoring mode.</p>
               </div>
             </div>
 
-            <div id="alertBanner" class="alert-banner">Phone detected. Alert system active.</div>
+            <div id="alertBanner" class="alert-banner">Phone detected — alert system active.</div>
           </div>
 
           <div class="feed-metrics">
             <article class="metric-card">
-              <span class="metric-label">Tracked objects</span>
+              <span class="metric-label">Tracked</span>
               <strong id="phoneCount">0</strong>
             </article>
             <article class="metric-card">
-              <span class="metric-label">Top confidence</span>
+              <span class="metric-label">Confidence</span>
               <strong id="confidenceValue">0%</strong>
             </article>
             <article class="metric-card">
@@ -89,91 +110,157 @@
           </div>
         </section>
 
+        <!-- ── Side panel ── -->
         <aside class="side-column">
-          <section class="glass-panel side-card status-card">
-            <p class="section-label">Detection Status</p>
-            <strong id="statusText" class="status-value status-safe">SAFE</strong>
-            <p id="statusMeta" class="side-copy">Protected zone is clear and the detector is idle.</p>
+          <section class="side-card status-card">
+            <p class="card-label">Detection status</p>
+            <strong id="statusText" class="status-value status-safe">Safe</strong>
+            <p id="statusMeta" class="card-copy">Protected zone is clear and the detector is idle.</p>
           </section>
 
-          <section class="glass-panel side-card control-card">
-            <p class="section-label">Controls</p>
+          <section class="side-card control-card">
+            <p class="card-label">Controls</p>
             <div class="action-row">
-              <button id="startButton" class="primary-button">Start Camera</button>
-              <button id="stopButton" class="secondary-button" disabled>Stop</button>
+              <button id="startButton" class="primary-button">Start camera</button>
+              <button id="stopButton" class="ghost-button" disabled>Stop</button>
             </div>
-            <p class="side-copy">Arm the system to begin real-time monitoring with instant alerts.</p>
+            <p class="card-copy">Arm the system to begin real-time monitoring with instant alerts.</p>
           </section>
 
-          <section class="glass-panel side-card telemetry-card">
-            <p class="section-label">Alert Telemetry</p>
+          <!-- ── Focus Timer ── -->
+          <section class="side-card timer-card">
+            <p class="card-label">Focus timer</p>
+            <div class="timer-display" id="timerDisplay">25:00</div>
+            <div class="timer-presets">
+              <button type="button" class="timer-preset-btn" data-minutes="10">10m</button>
+              <button type="button" class="timer-preset-btn active" data-minutes="25">25m</button>
+              <button type="button" class="timer-preset-btn" data-minutes="45">45m</button>
+              <button type="button" class="timer-preset-btn" data-minutes="60">60m</button>
+            </div>
+            <input type="number" id="timerCustomInput" class="timer-custom-input"
+                   placeholder="Custom minutes (1–300)" min="1" max="300" />
+            <div class="action-row timer-action-row">
+              <button id="timerStartButton" class="primary-button" type="button">Start focus</button>
+              <button id="timerStopButton" class="ghost-button" type="button" disabled>Reset</button>
+            </div>
+            <p class="card-copy">Camera stops automatically when time runs out.</p>
+          </section>
+
+          <section class="side-card telemetry-card">
+            <p class="card-label">Telemetry</p>
             <div class="telemetry-row">
-              <span>Feed state</span>
+              <span>Feed</span>
               <strong id="feedStateValue">Offline</strong>
             </div>
             <div class="telemetry-row">
-              <span>Guard profile</span>
+              <span>Profile</span>
               <strong id="profileValue">Phone-Free Zone</strong>
             </div>
             <div class="telemetry-row">
-              <span>Alert sound</span>
+              <span>Sound</span>
               <strong id="soundModeValue">Siren + Audio</strong>
             </div>
           </section>
 
-          <section class="glass-panel side-card stats-card">
-            <p class="section-label">Session Stats</p>
+          <section class="side-card stats-card">
+            <p class="card-label">Session</p>
             <div class="telemetry-row">
-              <span>Session time</span>
+              <span>Duration</span>
               <strong id="sessionTimeValue">00:00</strong>
             </div>
             <div class="telemetry-row">
-              <span>Alerts triggered</span>
+              <span>Alerts</span>
               <strong id="alertCountValue">0</strong>
             </div>
             <div class="telemetry-row">
-              <span>Longest clean streak</span>
+              <span>Longest clear</span>
               <strong id="longestStreakValue">00:00</strong>
             </div>
           </section>
 
-          <section class="glass-panel side-card footer-card">
-            <p class="footer-note">Made with &hearts; by Ansh Parmar</p>
-          </section>
+          <footer class="side-card footer-card">
+            <p class="footer-note">Made with ♥ by Ansh Parmar</p>
+          </footer>
         </aside>
-      </section>
+      </div>
     </main>
 
+    <!-- Timer complete overlay -->
+    <div id="timerAlert" class="timer-alert-overlay hidden" role="alertdialog"
+         aria-modal="true" aria-labelledby="timerAlertTitle">
+      <div class="timer-alert-card">
+        <div class="timer-alert-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M24 14v11l7 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 id="timerAlertTitle">Time's up!</h3>
+        <p>Your focus session is complete. The camera has been stopped.</p>
+        <button id="timerAlertDismiss" class="primary-button" type="button">Done</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
     <div id="settingsOverlay" class="settings-overlay"></div>
-    <aside id="settingsDrawer" class="settings-drawer glass-panel" aria-hidden="true">
+    <aside id="settingsDrawer" class="settings-drawer" aria-hidden="true">
       <div class="drawer-header">
-        <h3>Guard Settings</h3>
-        <button id="closeSettingsButton" class="icon-button" type="button" aria-label="Close settings">
-          <span class="icon-glyph" aria-hidden="true">&times;</span>
+        <h3>Settings</h3>
+        <button id="closeSettingsButton" class="icon-button close-btn" type="button" aria-label="Close settings">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <path d="M1.5 1.5l10 10M11.5 1.5l-10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
         </button>
       </div>
 
       <div class="drawer-body">
         <div class="drawer-section">
-          <p class="section-label">Guard profile</p>
+          <p class="drawer-section-label">Guard profile</p>
           <div class="profile-grid" id="profileGrid">
             <button type="button" class="profile-option active" data-profile="phone">
-              <span class="profile-icon" aria-hidden="true">&#128245;</span>
+              <span class="profile-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <rect x="5.5" y="2" width="9" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/>
+                  <circle cx="10" cy="15.2" r="0.7" fill="currentColor"/>
+                  <path d="M8.5 4h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                  <path d="M6.5 8.5l7 7M13.5 8.5l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </span>
               <span class="profile-name">Phone-Free Zone</span>
               <span class="profile-desc">Alerts when a phone appears in frame.</span>
             </button>
             <button type="button" class="profile-option" data-profile="presence">
-              <span class="profile-icon" aria-hidden="true">&#128694;</span>
+              <span class="profile-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.4"/>
+                  <path d="M3.5 18c0-3.59 2.91-6.5 6.5-6.5s6.5 2.91 6.5 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M14.5 12.5l1.5 1.5M17.5 13l-2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </span>
               <span class="profile-name">Presence Guard</span>
-              <span class="profile-desc">Alerts when you leave the frame. Front camera works best.</span>
+              <span class="profile-desc">Alerts when you leave the frame.</span>
             </button>
             <button type="button" class="profile-option" data-profile="intruder">
-              <span class="profile-icon" aria-hidden="true">&#128064;</span>
+              <span class="profile-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <ellipse cx="10" cy="10" rx="8" ry="5" stroke="currentColor" stroke-width="1.4"/>
+                  <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+                  <circle cx="10" cy="10" r="0.8" fill="currentColor"/>
+                </svg>
+              </span>
               <span class="profile-name">Intruder Alert</span>
-              <span class="profile-desc">Alerts when a second person enters frame.</span>
+              <span class="profile-desc">Alerts when a second person enters.</span>
             </button>
             <button type="button" class="profile-option" data-profile="custom">
-              <span class="profile-icon" aria-hidden="true">&#127919;</span>
+              <span class="profile-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.4"/>
+                  <circle cx="10" cy="10" r="3.5" stroke="currentColor" stroke-width="1.2"/>
+                  <circle cx="10" cy="10" r="0.9" fill="currentColor"/>
+                  <path d="M10 2v2.5M10 15.5V18M2 10h2.5M15.5 10H18"
+                        stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </span>
               <span class="profile-name">Custom Object</span>
               <span class="profile-desc">Watch for any object you choose.</span>
             </button>
@@ -181,66 +268,40 @@
 
           <div id="customObjectRow" class="custom-object-row" hidden>
             <label for="customObjectInput">Object to watch for</label>
-            <input
-              id="customObjectInput"
-              type="text"
-              list="cocoClasses"
-              placeholder="e.g. cup, book, laptop"
-              autocomplete="off"
-            />
+            <input id="customObjectInput" type="text" list="cocoClasses"
+                   placeholder="e.g. cup, book, laptop" autocomplete="off" />
             <datalist id="cocoClasses">
-              <option value="person"></option>
-              <option value="bicycle"></option>
-              <option value="car"></option>
-              <option value="motorcycle"></option>
-              <option value="backpack"></option>
-              <option value="umbrella"></option>
-              <option value="handbag"></option>
-              <option value="suitcase"></option>
-              <option value="bottle"></option>
-              <option value="wine glass"></option>
-              <option value="cup"></option>
-              <option value="fork"></option>
-              <option value="knife"></option>
-              <option value="spoon"></option>
-              <option value="bowl"></option>
-              <option value="banana"></option>
-              <option value="apple"></option>
-              <option value="sandwich"></option>
-              <option value="chair"></option>
-              <option value="couch"></option>
-              <option value="potted plant"></option>
-              <option value="bed"></option>
-              <option value="dining table"></option>
-              <option value="tv"></option>
-              <option value="laptop"></option>
-              <option value="mouse"></option>
-              <option value="remote"></option>
-              <option value="keyboard"></option>
-              <option value="cell phone"></option>
-              <option value="microwave"></option>
-              <option value="book"></option>
-              <option value="clock"></option>
-              <option value="vase"></option>
-              <option value="scissors"></option>
-              <option value="teddy bear"></option>
+              <option value="person"></option><option value="bicycle"></option>
+              <option value="car"></option><option value="motorcycle"></option>
+              <option value="backpack"></option><option value="umbrella"></option>
+              <option value="handbag"></option><option value="suitcase"></option>
+              <option value="bottle"></option><option value="cup"></option>
+              <option value="fork"></option><option value="knife"></option>
+              <option value="spoon"></option><option value="bowl"></option>
+              <option value="chair"></option><option value="couch"></option>
+              <option value="potted plant"></option><option value="bed"></option>
+              <option value="dining table"></option><option value="tv"></option>
+              <option value="laptop"></option><option value="mouse"></option>
+              <option value="remote"></option><option value="keyboard"></option>
+              <option value="cell phone"></option><option value="book"></option>
+              <option value="clock"></option><option value="vase"></option>
+              <option value="scissors"></option><option value="teddy bear"></option>
             </datalist>
-            <p class="field-hint">Only recognizes the AI model's built-in object list. Try a suggestion above.</p>
+            <p class="field-hint">Only recognizes objects from the AI model's built-in list.</p>
           </div>
         </div>
 
         <div class="drawer-section">
-          <p class="section-label">Detection sensitivity</p>
+          <p class="drawer-section-label">Detection</p>
+          <p class="drawer-setting-label">Sensitivity</p>
           <input id="sensitivitySlider" type="range" min="0.15" max="0.6" step="0.01" value="0.22" />
           <div class="slider-labels">
             <span>Loose</span>
             <span id="sensitivityValue">Balanced</span>
             <span>Strict</span>
           </div>
-        </div>
 
-        <div class="drawer-section">
-          <p class="section-label">Alert cooldown</p>
+          <p class="drawer-setting-label" style="margin-top:18px;">Alert cooldown</p>
           <input id="cooldownSlider" type="range" min="1" max="10" step="1" value="3" />
           <div class="slider-labels">
             <span>1s</span>
@@ -250,24 +311,44 @@
         </div>
 
         <div class="drawer-section">
-          <p class="section-label">Alert sound</p>
+          <p class="drawer-section-label">Alerts</p>
+          <p class="drawer-setting-label">Sound</p>
           <div class="segmented" id="soundModeGroup">
             <button type="button" class="segmented-option active" data-sound="full">Siren + Audio</button>
-            <button type="button" class="segmented-option" data-sound="siren">Siren Only</button>
+            <button type="button" class="segmented-option" data-sound="siren">Siren only</button>
             <button type="button" class="segmented-option" data-sound="silent">Silent</button>
           </div>
+
+          <div class="toggle-row">
+            <div>
+              <p class="drawer-setting-label" style="margin:0;">Show detection boxes</p>
+              <p class="field-hint" style="margin-top:2px;">Highlight detected objects on screen.</p>
+            </div>
+            <button id="showBoxesToggle" type="button" class="toggle-button active"
+                    role="switch" aria-checked="true">
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <button id="testAlertButton" class="test-alert-button" type="button">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M6.5 3.5v3.5M6.5 9.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Test alert sound
+          </button>
         </div>
 
         <div class="drawer-section">
-          <p class="section-label">Camera</p>
+          <p class="drawer-section-label">Camera</p>
           <div class="segmented" id="cameraFacingGroup">
-            <button type="button" class="segmented-option active" data-facing="environment">Back</button>
-            <button type="button" class="segmented-option" data-facing="user">Front</button>
+            <button type="button" class="segmented-option active" data-facing="environment">Back camera</button>
+            <button type="button" class="segmented-option" data-facing="user">Front camera</button>
           </div>
-          <p class="field-hint">Switching camera restarts the feed if it is running.</p>
+          <p class="field-hint" style="margin-top:8px;">Switching restarts the feed if it is running.</p>
         </div>
 
-        <button id="resetSettingsButton" class="secondary-button reset-button" type="button">Reset to defaults</button>
+        <button id="resetSettingsButton" class="ghost-button reset-button" type="button">Reset to defaults</button>
       </div>
     </aside>
 

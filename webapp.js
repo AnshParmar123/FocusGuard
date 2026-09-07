@@ -35,6 +35,8 @@ const elements = {
   soundModeGroup: document.getElementById("soundModeGroup"),
   cameraFacingGroup: document.getElementById("cameraFacingGroup"),
   resetSettingsButton: document.getElementById("resetSettingsButton"),
+  showBoxesToggle: document.getElementById("showBoxesToggle"),
+  testAlertButton: document.getElementById("testAlertButton"),
 };
 
 const SETTINGS_STORAGE_KEY = "focusguard.settings";
@@ -46,51 +48,52 @@ const DEFAULT_SETTINGS = {
   cooldownMs: 3000,
   soundMode: "full",
   facingMode: "environment",
+  showBoxes: true,
 };
 
 const PROFILES = {
   phone: {
     label: "Phone-Free Zone",
-    panelTitle: "Protected Camera Feed",
+    panelTitle: "Camera feed",
     emptyCopy: "Start the camera to arm the AI detector and switch this dashboard into live monitoring mode.",
     classes: () => ["cell phone", "remote"],
     mode: "presence",
-    badgeText: "PHONE DETECTED",
-    bannerText: "Phone detected. Alert system active.",
+    badgeText: "Phone detected",
+    bannerText: "Phone detected — alert system active.",
     trackedLabel: (count) => (count === 1 ? "Phone-like device in frame" : `${count} phone-like devices in frame`),
     boxLabel: (item) => `${item.class === "remote" ? "Possible phone" : "Phone"} ${Math.round(item.score * 100)}%`,
   },
   presence: {
     label: "Presence Guard",
-    panelTitle: "Presence Monitor",
+    panelTitle: "Presence monitor",
     emptyCopy: "Start the camera to make sure you stay in frame. Front camera is recommended for this mode.",
     classes: () => ["person"],
     mode: "absence",
-    badgeText: "AWAY FROM DESK",
-    bannerText: "You left the frame. Alert system active.",
+    badgeText: "Away from desk",
+    bannerText: "You left the frame — alert system active.",
     trackedLabel: () => "No one detected in frame",
     boxLabel: (item) => `Person ${Math.round(item.score * 100)}%`,
   },
   intruder: {
     label: "Intruder Alert",
-    panelTitle: "Intruder Watch",
+    panelTitle: "Intruder watch",
     emptyCopy: "Start the camera to get alerted the moment a second person enters the frame.",
     classes: () => ["person"],
     mode: "count-above",
     threshold: 1,
-    badgeText: "EXTRA PERSON",
-    bannerText: "Extra person detected. Alert system active.",
+    badgeText: "Extra person",
+    bannerText: "Extra person detected — alert system active.",
     trackedLabel: (count) => `${count} people detected in frame`,
     boxLabel: (item) => `Person ${Math.round(item.score * 100)}%`,
   },
   custom: {
     label: "Custom Object",
-    panelTitle: "Custom Object Watch",
+    panelTitle: "Custom object watch",
     emptyCopy: "Choose an object in Settings, then start the camera to watch for it.",
     classes: () => (state.settings.customObject ? [state.settings.customObject.trim().toLowerCase()] : []),
     mode: "presence",
-    badgeText: "TARGET DETECTED",
-    bannerText: "Target object detected. Alert system active.",
+    badgeText: "Target detected",
+    bannerText: "Target object detected — alert system active.",
     trackedLabel: (count) => `${count} target object${count === 1 ? "" : "s"} detected`,
     boxLabel: (item) => `${item.class} ${Math.round(item.score * 100)}%`,
   },
@@ -153,6 +156,7 @@ window.addEventListener("beforeunload", stopDetection);
 
 initSettingsUi();
 applyProfileToDashboard();
+applyDayTheme();
 
 function initSettingsUi() {
   elements.settingsButton.addEventListener("click", openSettings);
@@ -202,6 +206,24 @@ function initSettingsUi() {
 
   elements.resetSettingsButton.addEventListener("click", resetSettings);
 
+  if (elements.showBoxesToggle) {
+    syncToggle(elements.showBoxesToggle, state.settings.showBoxes);
+    elements.showBoxesToggle.addEventListener("click", () => {
+      state.settings.showBoxes = !state.settings.showBoxes;
+      syncToggle(elements.showBoxesToggle, state.settings.showBoxes);
+      saveSettings();
+    });
+  }
+
+  if (elements.testAlertButton) {
+    elements.testAlertButton.addEventListener("click", async () => {
+      if (!state.alarmReady) {
+        await prepareAlarm();
+      }
+      restartAlarmSequence();
+    });
+  }
+
   syncSettingsUiFromState();
 }
 
@@ -210,12 +232,20 @@ function syncSettingsUiFromState() {
   setActiveButton(elements.soundModeGroup, ".segmented-option", "sound", state.settings.soundMode);
   setActiveButton(elements.cameraFacingGroup, ".segmented-option", "facing", state.settings.facingMode);
   elements.customObjectRow.hidden = state.settings.profile !== "custom";
+  if (elements.showBoxesToggle) {
+    syncToggle(elements.showBoxesToggle, state.settings.showBoxes);
+  }
 }
 
 function setActiveButton(container, selector, dataKey, value) {
   container.querySelectorAll(selector).forEach((button) => {
     button.classList.toggle("active", button.dataset[dataKey] === value);
   });
+}
+
+function syncToggle(button, isActive) {
+  button.classList.toggle("active", isActive);
+  button.setAttribute("aria-checked", String(isActive));
 }
 
 function openSettings() {
@@ -300,7 +330,7 @@ function resetThreatTracking() {
   clearOverlay();
   setIdleAlertUi();
   if (state.isRunning) {
-    setStatus("SAFE", false);
+    setStatus("Safe", false);
   }
 }
 
@@ -417,7 +447,7 @@ function stopDetection() {
   elements.stopButton.disabled = true;
   resetThreatTracking();
   stopSessionStats();
-  setStatus("SAFE", false);
+  setStatus("Safe", false);
 }
 
 async function tick(now = 0) {
@@ -519,7 +549,7 @@ function renderDetections({ boxes, isThreatActive, profile, rawMatchCount, justT
     }
     setIdleAlertUi();
     if (state.isRunning) {
-      setStatus("SAFE", false);
+      setStatus("Safe", false);
       elements.viewerLabel.textContent = "Live detection running";
     }
     return;
@@ -541,24 +571,26 @@ function renderDetections({ boxes, isThreatActive, profile, rawMatchCount, justT
     registerAlertTriggered();
   }
 
-  context.lineWidth = 3;
-  context.font = '700 18px "Manrope", sans-serif';
+  if (state.settings.showBoxes) {
+    context.lineWidth = 2.5;
+    context.font = '600 15px "JetBrains Mono", monospace';
 
-  boxes.forEach((item) => {
-    const [x, y, width, height] = item.bbox;
-    const label = profile.boxLabel(item);
+    boxes.forEach((item) => {
+      const [x, y, width, height] = item.bbox;
+      const label = profile.boxLabel(item);
 
-    context.strokeStyle = "#ff5f6d";
-    context.fillStyle = "rgba(255, 95, 109, 0.18)";
-    context.fillRect(x, y, width, height);
-    context.strokeRect(x, y, width, height);
+      context.strokeStyle = "#f87171";
+      context.fillStyle = "rgba(248, 113, 113, 0.12)";
+      context.fillRect(x, y, width, height);
+      context.strokeRect(x, y, width, height);
 
-    const labelWidth = context.measureText(label).width + 20;
-    context.fillStyle = "#ff5f6d";
-    context.fillRect(x, Math.max(0, y - 34), labelWidth, 34);
-    context.fillStyle = "#ffffff";
-    context.fillText(label, x + 10, Math.max(23, y - 11));
-  });
+      const labelWidth = context.measureText(label).width + 18;
+      context.fillStyle = "#f87171";
+      context.fillRect(x, Math.max(0, y - 28), labelWidth, 28);
+      context.fillStyle = "#ffffff";
+      context.fillText(label, x + 9, Math.max(19, y - 9));
+    });
+  }
 }
 
 function maybePlayAlarm() {
@@ -718,7 +750,7 @@ function setStatus(text, isDanger = false) {
           : "Protected zone is clear and the detector is idle.";
   }
   if (elements.safetyBadge) {
-    elements.safetyBadge.textContent = isDanger ? text : "SAFE";
+    elements.safetyBadge.textContent = isDanger ? text : "Safe";
     elements.safetyBadge.className = `safety-badge ${isDanger ? "safety-danger" : "safety-safe"}`;
   }
 }
@@ -801,3 +833,159 @@ function formatDuration(ms) {
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
+
+// ── Day theme ──────────────────────────────────────────────────────────────
+
+function applyDayTheme() {
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  document.body.setAttribute("data-theme", days[new Date().getDay()]);
+}
+
+// ── Focus timer ────────────────────────────────────────────────────────────
+
+const timerEl = {
+  display:       document.getElementById("timerDisplay"),
+  presetButtons: document.querySelectorAll(".timer-preset-btn"),
+  customInput:   document.getElementById("timerCustomInput"),
+  startButton:   document.getElementById("timerStartButton"),
+  stopButton:    document.getElementById("timerStopButton"),
+  alert:         document.getElementById("timerAlert"),
+  alertDismiss:  document.getElementById("timerAlertDismiss"),
+};
+
+const timerState = {
+  totalSeconds:   25 * 60,
+  remainingSeconds: 25 * 60,
+  intervalId:     null,
+  running:        false,
+};
+
+initTimer();
+
+function initTimer() {
+  timerEl.presetButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (timerState.running) return;
+      const minutes = Number(btn.dataset.minutes);
+      setTimerDuration(minutes);
+      timerEl.presetButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      timerEl.customInput.value = "";
+    });
+  });
+
+  timerEl.customInput.addEventListener("change", () => {
+    if (timerState.running) return;
+    const val = Math.min(300, Math.max(1, Number(timerEl.customInput.value) || 25));
+    timerEl.customInput.value = val;
+    setTimerDuration(val);
+    timerEl.presetButtons.forEach((b) => b.classList.remove("active"));
+  });
+
+  timerEl.startButton.addEventListener("click", () => {
+    if (timerState.running) return;
+    startTimer();
+  });
+
+  timerEl.stopButton.addEventListener("click", resetTimer);
+  timerEl.alertDismiss.addEventListener("click", dismissTimerAlert);
+
+  updateTimerDisplay();
+}
+
+function setTimerDuration(minutes) {
+  timerState.totalSeconds = minutes * 60;
+  timerState.remainingSeconds = timerState.totalSeconds;
+  updateTimerDisplay();
+}
+
+function startTimer() {
+  timerState.running = true;
+  timerEl.display.classList.add("running");
+  timerEl.startButton.disabled = true;
+  timerEl.stopButton.disabled = false;
+  timerEl.presetButtons.forEach((b) => { b.disabled = true; });
+  timerEl.customInput.disabled = true;
+
+  timerState.intervalId = window.setInterval(timerTick, 1000);
+}
+
+function timerTick() {
+  timerState.remainingSeconds -= 1;
+  updateTimerDisplay();
+  if (timerState.remainingSeconds <= 0) {
+    onTimerComplete();
+  }
+}
+
+function onTimerComplete() {
+  window.clearInterval(timerState.intervalId);
+  timerState.intervalId = null;
+  timerState.running = false;
+
+  if (state.isRunning) {
+    stopDetection();
+  }
+
+  timerEl.display.classList.remove("running");
+  timerEl.alert.classList.remove("hidden");
+
+  if (navigator.vibrate) {
+    navigator.vibrate([300, 100, 300, 100, 300]);
+  }
+}
+
+function resetTimer() {
+  if (timerState.intervalId) {
+    window.clearInterval(timerState.intervalId);
+    timerState.intervalId = null;
+  }
+  timerState.running = false;
+  timerState.remainingSeconds = timerState.totalSeconds;
+
+  timerEl.display.classList.remove("running");
+  timerEl.startButton.disabled = false;
+  timerEl.stopButton.disabled = true;
+  timerEl.presetButtons.forEach((b) => { b.disabled = false; });
+  timerEl.customInput.disabled = false;
+
+  updateTimerDisplay();
+}
+
+function dismissTimerAlert() {
+  timerEl.alert.classList.add("hidden");
+  resetTimer();
+}
+
+function updateTimerDisplay() {
+  const minutes = Math.floor(timerState.remainingSeconds / 60);
+  const seconds = timerState.remainingSeconds % 60;
+  timerEl.display.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+// ── Live clock ─────────────────────────────────────────────────────────────
+
+(function initClock() {
+  const displayEl = document.getElementById("clockDisplay");
+  const amPmEl    = document.getElementById("clockAmPm");
+  if (!displayEl) return;
+
+  const indiaTimeFormatter = new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  function tick() {
+    const parts = Object.fromEntries(
+      indiaTimeFormatter.formatToParts(new Date()).map(({ type, value }) => [type, value]),
+    );
+    displayEl.textContent = `${parts.hour}:${parts.minute}:${parts.second}`;
+    amPmEl.textContent = parts.dayPeriod;
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
