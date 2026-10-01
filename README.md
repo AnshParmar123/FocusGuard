@@ -18,6 +18,7 @@ It opens your webcam, watches for a condition you choose in real time using AI i
 - Live bounding boxes drawn over the camera feed
 - Alert flow with a siren sound, optional `audio.mp3` follow-up, and mobile vibration on supported devices
 - Mobile-friendly layout: bottom-sheet settings drawer, safe-area padding for notches, touch-sized controls, and an adaptive camera viewport
+- Keyboard-friendly dialogs: Escape closes the settings drawer and timer-complete alert
 - Static-site friendly setup that works well with Vercel
 
 ## How It Works

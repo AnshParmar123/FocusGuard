@@ -121,8 +121,8 @@
           <section class="side-card control-card">
             <p class="card-label">Controls</p>
             <div class="action-row">
-              <button id="startButton" class="primary-button">Start camera</button>
-              <button id="stopButton" class="ghost-button" disabled>Stop</button>
+              <button id="startButton" class="primary-button" type="button">Start camera</button>
+              <button id="stopButton" class="ghost-button" type="button" disabled>Stop</button>
             </div>
             <p class="card-copy">Arm the system to begin real-time monitoring with instant alerts.</p>
           </section>
@@ -130,7 +130,7 @@
           <!-- ── Focus Timer ── -->
           <section class="side-card timer-card">
             <p class="card-label">Focus timer</p>
-            <div class="timer-display" id="timerDisplay">25:00</div>
+            <div class="timer-display" id="timerDisplay" aria-live="polite">25:00</div>
             <div class="timer-presets">
               <button type="button" class="timer-preset-btn" data-minutes="10">10m</button>
               <button type="button" class="timer-preset-btn active" data-minutes="25">25m</button>
@@ -203,9 +203,9 @@
 
     <!-- Settings -->
     <div id="settingsOverlay" class="settings-overlay"></div>
-    <aside id="settingsDrawer" class="settings-drawer" aria-hidden="true">
+    <aside id="settingsDrawer" class="settings-drawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
       <div class="drawer-header">
-        <h3>Settings</h3>
+        <h3 id="settingsTitle">Settings</h3>
         <button id="closeSettingsButton" class="icon-button close-btn" type="button" aria-label="Close settings">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
             <path d="M1.5 1.5l10 10M11.5 1.5l-10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
