@@ -113,6 +113,7 @@ const state = {
   threatStreak: 0,
   clearStreak: 0,
   lastMatches: [],
+  lastFocusedElement: null,
   settings: loadSettings(),
   session: {
     startedAt: null,
@@ -153,6 +154,7 @@ function getActiveProfile() {
 elements.startButton.addEventListener("click", startDetection);
 elements.stopButton.addEventListener("click", stopDetection);
 window.addEventListener("beforeunload", stopDetection);
+window.addEventListener("keydown", handleGlobalKeydown);
 
 initSettingsUi();
 applyProfileToDashboard();
@@ -249,10 +251,12 @@ function syncToggle(button, isActive) {
 }
 
 function openSettings() {
+  state.lastFocusedElement = document.activeElement;
   elements.settingsDrawer.classList.add("open");
   elements.settingsDrawer.setAttribute("aria-hidden", "false");
   elements.settingsOverlay.classList.add("visible");
   elements.settingsButton.setAttribute("aria-expanded", "true");
+  elements.closeSettingsButton.focus();
 }
 
 function closeSettings() {
@@ -260,6 +264,26 @@ function closeSettings() {
   elements.settingsDrawer.setAttribute("aria-hidden", "true");
   elements.settingsOverlay.classList.remove("visible");
   elements.settingsButton.setAttribute("aria-expanded", "false");
+
+  if (state.lastFocusedElement && document.contains(state.lastFocusedElement)) {
+    state.lastFocusedElement.focus();
+  }
+  state.lastFocusedElement = null;
+}
+
+function handleGlobalKeydown(event) {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (elements.settingsDrawer.classList.contains("open")) {
+    closeSettings();
+    return;
+  }
+
+  if (!timerEl.alert.classList.contains("hidden")) {
+    dismissTimerAlert();
+  }
 }
 
 function setProfile(profileKey) {
